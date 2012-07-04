@@ -157,6 +157,7 @@ class RoutingTestCase(WerkzeugTestCase):
             r.Rule('/User:<username>', endpoint='user'),
             r.Rule('/User:<username>/<path:name>', endpoint='userpage'),
             r.Rule('/Files/<path:file>', endpoint='files'),
+            r.Rule('/<country>/<city>/<county>/<town>', endpoint='countrymap')
         ])
         adapter = map.bind('example.org', '/')
 
