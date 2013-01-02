@@ -156,25 +156,57 @@ class RoutingTestCase(WerkzeugTestCase):
             r.Rule('/Talk:<path:name>', endpoint='talk'),
             r.Rule('/User:<username>', endpoint='user'),
             r.Rule('/User:<username>/<path:name>', endpoint='userpage'),
-            r.Rule('/Files/<path:file>', endpoint='files'),
-            r.Rule('/<country>/<city>/<county>/<town>', endpoint='countrymap')
+            r.Rule('/Files/<path:file>', endpoint='files')
         ])
         adapter = map.bind('example.org', '/')
 
-        assert adapter.match('/') == ('page', {'name':'FrontPage'})
+        self.assertEqual(adapter.match('/'),
+            ('page', {'name': 'FrontPage'}))
         self.assert_raises(r.RequestRedirect, lambda: adapter.match('/FrontPage'))
-        assert adapter.match('/Special') == ('special', {})
-        assert adapter.match('/2007') == ('year', {'year':2007})
-        assert adapter.match('/Some/Page') == ('page', {'name':'Some/Page'})
-        assert adapter.match('/Some/Page/edit') == ('editpage', {'name':'Some/Page'})
-        assert adapter.match('/Foo/silly/bar') == ('sillypage', {'name':'Foo', 'name2':'bar'})
-        assert adapter.match('/Foo/silly/bar/edit') == ('editsillypage', {'name':'Foo', 'name2':'bar'})
-        assert adapter.match('/Talk:Foo/Bar') == ('talk', {'name':'Foo/Bar'})
-        assert adapter.match('/User:thomas') == ('user', {'username':'thomas'})
-        assert adapter.match('/User:thomas/projects/werkzeug') == \
-            ('userpage', {'username':'thomas', 'name':'projects/werkzeug'})
-        assert adapter.match('/Files/downloads/werkzeug/0.2.zip') == \
-            ('files', {'file':'downloads/werkzeug/0.2.zip'})
+        self.assertEqual(adapter.match('/Special'),
+            ('special', {}))
+        self.assertEqual(adapter.match('/2007'),
+            ('year', {'year': 2007}))
+        self.assertEqual(adapter.match('/Some/Page'),
+            ('page', {'name': 'Some/Page'}))
+        self.assertEqual(adapter.match('/Some/Page/edit'),
+            ('editpage', {'name': 'Some/Page'}))
+        self.assertEqual(adapter.match('/Foo/silly/bar'),
+            ('sillypage', {'name': 'Foo', 'name2': 'bar'}))
+        self.assertEqual(adapter.match('/Foo/silly/bar/edit'),
+            ('editsillypage', {'name': 'Foo', 'name2': 'bar'}))
+        self.assertEqual(adapter.match('/Talk:Foo/Bar'),
+            ('talk', {'name': 'Foo/Bar'}))
+        self.assertEqual(adapter.match('/User:thomas'),
+            ('user', {'username': 'thomas'}))
+        self.assertEqual(adapter.match('/User:thomas/projects/werkzeug'),
+            ('userpage', {'username': 'thomas', 'name': 'projects/werkzeug'}))
+        self.assertEqual(adapter.match('/Files/downloads/werkzeug/0.2.zip'),
+            ('files', {'file': 'downloads/werkzeug/0.2.zip'}))
+
+    def test_path_mixed(self):
+        map = r.Map([
+            r.Rule('/', endpoint='index'),
+            r.Rule('/static/<path:filename>', endpoint='static'),
+            r.Rule('/<first>', endpoint='first'),
+            r.Rule('/<first>/<second>', endpoint='second'),
+            r.Rule('/<first>/<second>/<third>', endpoint='third'),
+            r.Rule('/<first>/static/<third>', endpoint='midstatic'),
+            r.Rule('/<first>/static/new', endpoint='newstatic')
+        ])
+        adapter = map.bind('example.org', '/')
+        self.assertEqual(adapter.match('/'), ('index', {}))
+        self.assertEqual(adapter.match('/static/img/favicon.ico'), ('static', {'filename': 'img/favicon.ico'}))
+        self.assertEqual(adapter.match('/first'),
+            ('first', {'first': u'first'}))
+        self.assertEqual(adapter.match('/first/second'),
+            ('second', {'first': u'first', 'second': u'second'}))
+        self.assertEqual(adapter.match('/first/second/third'),
+            ('third', {'first': u'first', 'second': u'second', 'third': u'third'}))
+        self.assertEqual(adapter.match('/first/static/third'),
+            ('midstatic', {'first': u'first', 'third': u'third'}))
+        self.assertEqual(adapter.match('/first/static/new'),
+            ('newstatic', {'first': u'first'}))
 
     def test_dispatch(self):
         env = create_environ('/')
